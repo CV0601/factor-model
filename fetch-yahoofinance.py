@@ -20,7 +20,7 @@ import argparse
 import os
 from pathlib import Path
 import sys
-
+from datetime import datetime
 import pandas as pd
 import yfinance as yf
 
@@ -59,6 +59,7 @@ def flatten_multiindex(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 def fetch_and_save(tickers: list[str], start: str | None, end: str | None, interval: str, output: str, auto_adjust: bool) -> None:
+    ts = datetime.now().strftime("%Y-%m-%d")
     out_path = Path(output)
     if out_path.is_dir() or output.endswith("/"):
         ensure_dir(out_path)
@@ -68,10 +69,11 @@ def fetch_and_save(tickers: list[str], start: str | None, end: str | None, inter
             if df.empty:
                 print(f"Warning: no data for {t}")
                 continue
-            save_dataframe(df, out_path / f"{t}.csv")
+            save_dataframe(df, out_path / f"{t}_{ts}.csv")
         return
 
     # Single combined CSV (may contain multiindex columns if multiple tickers)
+    final_output = out_path.parent / f"{out_path.stem}_{ts}{out_path.suffix}"
     print(f"Downloading combined tickers: {','.join(tickers)} ...")
     df = yf.download(tickers, start=start, end=end, interval=interval, auto_adjust=auto_adjust, progress=False)
     if df.empty:
@@ -79,7 +81,7 @@ def fetch_and_save(tickers: list[str], start: str | None, end: str | None, inter
         return
     # If multiple tickers, flatten columns
     df = flatten_multiindex(df)
-    save_dataframe(df, out_path)
+    save_dataframe(df, final_output)
 
 def main() -> int:
     args = parse_args()
