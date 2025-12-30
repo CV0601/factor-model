@@ -37,7 +37,8 @@ def get_portfolio_returns(file_path: str) -> pd.DataFrame:
     
     # Convert 'Portfolio Daily_Return' to float and 'Date' to datetime
     clean_df['Portfolio Daily_Return'] = pd.to_numeric(clean_df['Portfolio Daily_Return'], errors='coerce')
-    clean_df['Date'] = pd.to_datetime(clean_df['Date'])
+    # Inspect the Date format by reading the df
+    clean_df['Date'] = pd.to_datetime(clean_df['Date'], format='%m/%d/%y')  # Specify format for MM/DD/YY
     
     # Set Date as index (useful for time-series analysis)
     clean_df = clean_df.set_index('Date').sort_index()

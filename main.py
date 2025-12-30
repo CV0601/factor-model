@@ -11,8 +11,11 @@ Structure:
 
 import sys
 import pandas as pd
+import numpy as np
+from pathlib import Path
 from fetch_portfolio_data import get_portfolio_returns
 from fetch_yahoofinance import fetch_data
+from scipy.stats import mstats
 # from analysis import run_factor_analysis  # To be created
 # from reporting import generate_report  # To be created
 
@@ -20,15 +23,22 @@ def main():
     # Step 1: Data Fetching
     print("Step 1: Fetching data...")
     try:
-        # Portfolio data (placeholder - update with actual function)
-        # portfolio_df = get_portfolio_data()
-        portfolio_df = pd.DataFrame()  # Placeholder
+        # Portfolio data from CSV using function
+        data_dir = Path('data')
+        csv_file = data_dir / 'data_22_12_2025.csv'
+        portfolio_df = get_portfolio_returns(str(csv_file))
+        print(f"Fetched portfolio data with shape: {portfolio_df.shape}")
+
+        # Set start and end dates based on portfolio data
+        start_date = portfolio_df.index.min().strftime('%Y-%m-%d')
+        end_date = portfolio_df.index.max().strftime('%Y-%m-%d')
+        print(f"Using date range: {start_date} to {end_date}")
 
         # Market data
         market_df = fetch_data(
             tickers='AAPL,MSFT,GOOGL',  # Example tickers
-            start='2020-01-01',
-            end='2023-12-31',
+            start=start_date,
+            end=end_date,
             interval='1d',
             auto_adjust=True
         )
@@ -40,14 +50,27 @@ def main():
     # Step 2: Data Handling
     print("Step 2: Handling data...")
     try:
-        # Preprocess portfolio_df and market_df
-        # E.g., align dates, handle missing values, merge if needed
-        # For now, basic checks
-        if market_df.empty:
-            raise ValueError("Market data is empty")
-        # processed_df = preprocess_data(portfolio_df, market_df)
-        processed_df = market_df  # Placeholder
-        print(f"Processed data with shape: {processed_df.shape}")
+        # Align market_df to portfolio_df dates (portfolio is master)
+        common_dates = portfolio_df.index.intersection(market_df.index)
+        portfolio_df = portfolio_df.loc[common_dates]
+        market_df = market_df.loc[common_dates]
+        print(f"Aligned data to common dates. Portfolio shape: {portfolio_df.shape}, Market shape: {market_df.shape}")
+
+        # Filter market_df to keep only 'Close' columns
+        market_df = market_df.filter(like='Close', axis=1)
+        print(f"Filtered market_df to Close columns. Shape: {market_df.shape}")
+
+        # Combine portfolio_df and market_df
+        combined_df = pd.concat([portfolio_df, market_df], axis=1)
+        print(f"Combined DataFrame shape: {combined_df.shape}")
+
+        # Trim combined_df using overall quantiles: calculate 2.5% and 97.5% from all values, then remove rows with any value outside
+        all_values = combined_df.values.flatten()
+        lower = np.quantile(all_values, 0.025)
+        upper = np.quantile(all_values, 0.975)
+        mask = (combined_df >= lower) & (combined_df <= upper)
+        processed_df = combined_df[mask.all(axis=1)]
+        print(f"Trimmed DataFrame shape: {processed_df.shape}")
     except Exception as e:
         print(f"Error in data handling: {e}")
         sys.exit(1)
