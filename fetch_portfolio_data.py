@@ -33,18 +33,12 @@ def get_portfolio_returns(file_path: str) -> pd.DataFrame:
     
     # 4. Clean and Convert types
     clean_df = df[['Date', return_col]].copy()
-    clean_df.columns = ['Date', 'Daily_Return']
+    clean_df.columns = ['Date', 'Portfolio Daily_Return']
     
-    # Convert 'Daily_Return' to float and 'Date' to datetime
-    clean_df['Daily_Return'] = pd.to_numeric(clean_df['Daily_Return'], errors='coerce')
+    # Convert 'Portfolio Daily_Return' to float and 'Date' to datetime
+    clean_df['Portfolio Daily_Return'] = pd.to_numeric(clean_df['Portfolio Daily_Return'], errors='coerce')
     clean_df['Date'] = pd.to_datetime(clean_df['Date'])
     
     # Set Date as index (useful for time-series analysis)
     clean_df = clean_df.set_index('Date').sort_index()
-    
     return clean_df
-
-# --- Usage Example ---
-# df = get_portfolio_returns('data_22_12_2025.csv')
-# print(df.head())
-# print(df['Daily_Return'].mean())
