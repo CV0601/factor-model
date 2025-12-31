@@ -15,7 +15,8 @@ import numpy as np
 from pathlib import Path
 from fetch_portfolio_data import get_portfolio_returns
 from fetch_yahoofinance import fetch_data
-from scipy.stats import mstats
+import matplotlib
+import simple_OLS
 # from analysis import run_factor_analysis  # To be created
 # from reporting import generate_report  # To be created
 
@@ -36,7 +37,7 @@ def main():
 
         # Market data
         market_df = fetch_data(
-            tickers='AAPL,MSFT,GOOGL',  # Example tickers
+            tickers='^990100-USD-STRD',  # msci world index
             start=start_date,
             end=end_date,
             interval='1d',
@@ -50,18 +51,21 @@ def main():
     # Step 2: Data Handling
     print("Step 2: Handling data...")
     try:
+        # Calculate returns for market data
+        adj_market_df = market_df.pct_change()*100
         # Align market_df to portfolio_df dates (portfolio is master)
-        common_dates = portfolio_df.index.intersection(market_df.index)
+        common_dates = portfolio_df.index.intersection(adj_market_df.index)
         portfolio_df = portfolio_df.loc[common_dates]
-        market_df = market_df.loc[common_dates]
-        print(f"Aligned data to common dates. Portfolio shape: {portfolio_df.shape}, Market shape: {market_df.shape}")
+        adj_market_df = adj_market_df.loc[common_dates]
+        print(f"Aligned data to common dates. Portfolio shape: {portfolio_df.shape}, Market shape: {adj_market_df.shape}")
 
-        # Filter market_df to keep only 'Close' columns
-        market_df = market_df.filter(like='Close', axis=1)
-        print(f"Filtered market_df to Close columns. Shape: {market_df.shape}")
+        # Filter adj_market_df to keep only 'Close' columns
+        adj_market_df = adj_market_df.filter(like='Close', axis=1)
 
-        # Combine portfolio_df and market_df
-        combined_df = pd.concat([portfolio_df, market_df], axis=1)
+        print(f"Filtered market_df to Close columns. Shape: {adj_market_df.shape}")
+
+        # Combine portfolio_df and adj_market_df
+        combined_df = pd.concat([portfolio_df, adj_market_df], axis=1).dropna()
         print(f"Combined DataFrame shape: {combined_df.shape}")
 
         # Trim combined_df using overall quantiles: calculate 2.5% and 97.5% from all values, then remove rows with any value outside
@@ -78,9 +82,8 @@ def main():
     # Step 3: Factor Analysis
     print("Step 3: Running factor analysis...")
     try:
-        # results = run_factor_analysis(processed_df)
-        results = {"coefficients": [0.1, 0.2, 0.3]}  # Placeholder
-        print(f"Analysis complete. Sample results: {results}")
+        model, stats = simple_OLS.perform_ols_analysis(processed_df)
+        print(f"Analysis complete. Sample results: {stats}")
     except Exception as e:
         print(f"Error in factor analysis: {e}")
         sys.exit(1)
@@ -90,7 +93,7 @@ def main():
     try:
         # generate_report(results, output_path='output/report.txt')
         print("Report: Analysis results printed to console.")
-        print(results)  # Placeholder
+        print(stats)  # Placeholder
     except Exception as e:
         print(f"Error in reporting: {e}")
         sys.exit(1)
