@@ -83,6 +83,7 @@ def main():
     print("Step 3: Running factor analysis...")
     try:
         model, stats = simple_OLS.perform_ols_analysis(processed_df)
+        beta_df = simple_OLS.run_monthly_regressions(processed_df, graphs=True)
         print(f"Analysis complete. Sample results: {stats}")
     except Exception as e:
         print(f"Error in factor analysis: {e}")
