@@ -1,6 +1,7 @@
 import statsmodels.api as sm
 import pandas as pd
 import matplotlib.pyplot as plt
+import numpy as np
 
 def perform_ols_analysis(df, graphs=False):
     """
@@ -36,18 +37,19 @@ def perform_ols_analysis(df, graphs=False):
         # 4. Diagnostic Plots
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
 
-        # --- Plot 1: Actual vs. Predicted with Coefficients ---
-        ax1.scatter(model.fittedvalues, y, alpha=0.5, color='royalblue', label='Data Points')
-        line_coords = [y.min(), y.max()]
-        ax1.plot(line_coords, line_coords, color='red', linestyle='--', label='Perfect Fit')
-        
+        # --- Plot 1: Portfolio vs. Market with Coefficients ---
+        ax1.scatter(X_with_intercept.iloc[:, 1], y, alpha=0.5, color='royalblue', label='Data Points')
+        # Create 100 points from the min to max of the market
+        x_range = np.linspace(X_with_intercept.iloc[:, 1].min(), X_with_intercept.iloc[:, 1].max(), 100)
+        y_line = model.params[0] + (model.params[1] * x_range)
+        ax1.plot(x_range, y_line, color='red', lw=2, label=f'Beta: {model.params[1]:.2f}')
         # Adding the coefficient text box
         ax1.text(0.05, 0.95, coef_text, transform=ax1.transAxes, fontsize=10,
                 verticalalignment='top', bbox=dict(boxstyle='round', facecolor='white', alpha=0.5))
         
         ax1.set_title(f'Actual vs. Predicted (R²: {model.rsquared:.3f})')
-        ax1.set_xlabel('Predicted')
-        ax1.set_ylabel('Actual')
+        ax1.set_xlabel('Market Returns')
+        ax1.set_ylabel('Portfolio Returns')
         ax1.legend(loc='lower right')
 
         # --- Plot 2: Residual Plot ---

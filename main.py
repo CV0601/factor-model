@@ -17,6 +17,7 @@ from fetch_portfolio_data import get_portfolio_returns
 from fetch_yahoofinance import fetch_data
 import matplotlib
 import simple_OLS
+import utils
 # from analysis import run_factor_analysis  # To be created
 # from reporting import generate_report  # To be created
 
@@ -67,14 +68,8 @@ def main():
         # Combine portfolio_df and adj_market_df
         combined_df = pd.concat([portfolio_df, adj_market_df], axis=1).dropna()
         print(f"Combined DataFrame shape: {combined_df.shape}")
-
-        # Trim combined_df using overall quantiles: calculate 2.5% and 97.5% from all values, then remove rows with any value outside
-        all_values = combined_df.values.flatten()
-        lower = np.quantile(all_values, 0.025)
-        upper = np.quantile(all_values, 0.975)
-        mask = (combined_df >= lower) & (combined_df <= upper)
-        processed_df = combined_df[mask.all(axis=1)]
-        print(f"Trimmed DataFrame shape: {processed_df.shape}")
+        # trim outliers
+        processed_df = utils.trimm_df(combined_df, upper=0.975, lower=0.025) 
     except Exception as e:
         print(f"Error in data handling: {e}")
         sys.exit(1)
