@@ -22,7 +22,8 @@ def perform_ols_analysis(df, graphs=False):
         "t_stats": model.tvalues,
         "r_squared": model.rsquared,
         "adj_r_squared": model.rsquared_adj,
-        "mse": model.mse_resid
+        "mse": model.mse_resid,
+        "residuals": model.resid
     }
     if graphs: # Display diagnostic plots
         # 3. Format coefficients for the plot
@@ -65,6 +66,10 @@ def perform_ols_analysis(df, graphs=False):
     return model, results_dict
 
 def run_monthly_regressions(df, graphs_overtime=False, EDA_graphs=False):
+    """
+    Perform OLS regressions for each month in the DataFrame.
+    Returns a DataFrame with monthly coefficients, t-stats, R², and N.
+    """
     monthly_results = []
     
     for timestamp, month_data in df.groupby(pd.Grouper(freq='ME')):
@@ -88,7 +93,16 @@ def run_monthly_regressions(df, graphs_overtime=False, EDA_graphs=False):
         plot_all_coefficients(history_df)
         
     return history_df
+
 def plot_all_coefficients(history_df):
+    """_summary_
+    Plots the evolution of all coefficients over time.
+    Args:
+        history_df (_type_): pandas DataFrame with monthly regression results.
+
+    Returns:
+        _type_: pandas DataFrame with monthly coefficients.
+    """
     # 1. Identify all beta columns (including const_beta)
     all_beta_cols = [c for c in history_df.columns if c.endswith('_beta')]
     

@@ -62,7 +62,6 @@ def main():
 
         # Filter adj_market_df to keep only 'Close' columns
         adj_market_df = adj_market_df.filter(like='Close', axis=1)
-
         print(f"Filtered market_df to Close columns. Shape: {adj_market_df.shape}")
 
         # Combine portfolio_df and adj_market_df
